@@ -1,0 +1,49 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /clientes/{clienteId} {
+      allow read: if request.auth != null && request.auth.uid == clienteId;
+      allow write: if request.auth != null && request.auth.uid == clienteId;
+    }
+
+    match /empresas/{empresaId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == empresaId;
+    }
+
+    match /solicitudes/{solicitudId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.clienteId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.clienteId == request.auth.uid;
+
+      match /ofertas/{ofertaId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && request.resource.data.empresaId == request.auth.uid;
+        allow update: if request.auth != null && resource.data.empresaId == request.auth.uid;
+      }
+    }
+
+    match /transacciones/{transaccionId} {
+      allow read: if request.auth != null &&
+        (resource.data.clienteId == request.auth.uid || resource.data.empresaId == request.auth.uid);
+      allow write: if false;
+
+      match /mensajes/{mensajeId} {
+        allow read: if request.auth != null &&
+          get(/databases/$(database)/documents/transacciones/$(transaccionId)).data.chatHabilitado == true &&
+          (get(/databases/$(database)/documents/transacciones/$(transaccionId)).data.clienteId == request.auth.uid ||
+           get(/databases/$(database)/documents/transacciones/$(transaccionId)).data.empresaId == request.auth.uid);
+        allow create: if request.auth != null &&
+          get(/databases/$(database)/documents/transacciones/$(transaccionId)).data.chatHabilitado == true &&
+          request.resource.data.remitenteId == request.auth.uid;
+      }
+    }
+
+    match /paises/{paisId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
