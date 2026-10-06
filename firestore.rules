@@ -4,6 +4,9 @@ service cloud.firestore {
     match /usuarios/{u} {
       allow read: if request.auth.uid == u;
       allow create: if request.auth.uid == u && request.resource.data.saldo == 0;
+      allow update: if request.auth.uid == u &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['whatsapp','pais','plan','periodo']);
     }
     match /solicitudes/{s} {
       allow read: if request.auth != null;
