@@ -10,12 +10,28 @@ service cloud.firestore {
     }
     match /solicitudes/{s} {
       allow read: if request.auth != null;
-      allow create: if request.auth.uid == request.resource.data.uid;
+      allow create: if request.auth.uid == request.resource.data.uid
+        && (!('extras' in request.resource.data)
+            || request.resource.data.extras.size() <= 2);
       allow update: if request.auth.uid == resource.data.uid;
       match /ofertas/{o} {
         allow read: if request.auth != null;
         allow write: if request.auth.uid == o;
       }
+      match /contacto/{c} {
+        allow create, update: if request.auth.uid == c;
+        allow read: if request.auth.uid == c ||
+          get(/databases/$(db)/documents/solicitudes/$(s)).data.estado == 'aceptada'
+          && (
+            (get(/databases/$(db)/documents/solicitudes/$(s)).data.ofertaId == request.auth.uid
+              && get(/databases/$(db)/documents/solicitudes/$(s)).data.uid == c) ||
+            (get(/databases/$(db)/documents/solicitudes/$(s)).data.uid == request.auth.uid
+              && get(/databases/$(db)/documents/solicitudes/$(s)).data.ofertaId == c));
+      }
+    }
+    match /ofertasEnviadas/{id} {
+      allow create, update: if request.auth.uid == request.resource.data.empresaUid;
+      allow read: if request.auth.uid == resource.data.empresaUid;
     }
   }
 }
