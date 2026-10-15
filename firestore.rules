@@ -7,6 +7,11 @@ service cloud.firestore {
       allow update: if request.auth.uid == u &&
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['whatsapp','pais','plan','periodo']);
+      // Recargas y movimientos: solo los escribe el servidor (Cloud Functions)
+      match /movimientos/{m} {
+        allow read: if request.auth.uid == u;
+        allow write: if false;
+      }
     }
     match /solicitudes/{s} {
       allow read: if request.auth != null;
@@ -16,7 +21,9 @@ service cloud.firestore {
       allow update: if request.auth.uid == resource.data.uid;
       match /ofertas/{o} {
         allow read: if request.auth != null;
-        allow write: if request.auth.uid == o;
+        // Saldo mínimo de $5 para ofertar
+        allow write: if request.auth.uid == o
+          && get(/databases/$(db)/documents/usuarios/$(request.auth.uid)).data.saldo >= 5;
       }
       match /contacto/{c} {
         allow create, update: if request.auth.uid == c;
@@ -35,3 +42,4 @@ service cloud.firestore {
     }
   }
 }
+
