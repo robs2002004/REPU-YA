@@ -205,7 +205,7 @@ const SIM=Object.fromEntries(Object.values(MON)),monedaDe=p=>(MON[p]||['USD','$'
 /* Gratis hasta el 30 de noviembre de 2026 (clientes y empresas) */
 const GRATIS_HASTA=new Date('2026-11-30T23:59:59-06:00').getTime(),gratis=()=>Date.now()<=GRATIS_HASTA;
 /* PayPal: pega aquí tu Client ID (developer.paypal.com > Apps & Credentials) */
-const PAYPAL_CLIENT_ID='PON_AQUI_TU_CLIENT_ID_DE_PAYPAL',SALDO_MIN=5,TOPE_MIN=100,COMISION=.05;
+const PAYPAL_CLIENT_ID='BAAPrZKxQ3JbNCMKQ4vbUA5aIx-LBzrr0hJ7xBtAfoPerU0A55zRHE47Is38eIDdxI3CcICC1ZOZiEOJVY',SALDO_MIN=5,TOPE_MIN=100,COMISION=.05;
 let miSaldo=0,MOV=[],COM=[];
 /* Unidades de cada moneda por 1 USD (valores de respaldo; se actualizan solos al abrir la app) */
 const TASAS={USD:1,CAD:1.38,MXN:18.5,GTQ:7.7,BZD:2,HNL:26.3,NIO:36.8,CRC:505,CUP:24,JMD:158,HTG:131,DOP:61,BSD:1,BBD:2,TTD:6.8,COP:4000,VES:200,GYD:209,SRD:38,PEN:3.6,BRL:5.4,BOB:6.9,PYG:7500,CLP:950,UYU:40,ARS:1400};
