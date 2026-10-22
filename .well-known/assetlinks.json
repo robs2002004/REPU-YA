@@ -1,1 +1,12 @@
-
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "NOMBRE.DE.PAQUETE.QUE.ELIGISTE",
+      "sha256_cert_fingerprints": [
+        "HUELLA_SHA256_DEL_KEYSTORE"
+      ]
+    }
+  }
+]
