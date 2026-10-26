@@ -1,30 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
+
+    // Perfil de usuario (cliente o empresa)
     match /usuarios/{u} {
       allow read: if request.auth.uid == u;
       allow create: if request.auth.uid == u && request.resource.data.saldo == 0;
       allow update: if request.auth.uid == u &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['whatsapp','pais','plan','periodo']);
+          .hasOnly(['whatsapp','pais','paises','plan','periodo',
+                    'empresa','representante','direccionPostal','lat','lng']);
+
       // Recargas y movimientos: solo los escribe el servidor (Cloud Functions)
       match /movimientos/{m} {
         allow read: if request.auth.uid == u;
         allow write: if false;
       }
     }
+
+    // Subastas (solicitudes)
     match /solicitudes/{s} {
       allow read: if request.auth != null;
       allow create: if request.auth.uid == request.resource.data.uid
         && (!('extras' in request.resource.data)
             || request.resource.data.extras.size() <= 2);
       allow update: if request.auth.uid == resource.data.uid;
+
+      // Ofertas de empresas
+      // Gratis hasta el 30/11/2026 23:59:59 (El Salvador = 05:59:59 UTC del 1/12).
+      // Después de ese periodo se exige saldo mínimo de $5.
       match /ofertas/{o} {
         allow read: if request.auth != null;
-        // Saldo mínimo de $5 para ofertar
         allow write: if request.auth.uid == o
-          && get(/databases/$(db)/documents/usuarios/$(request.auth.uid)).data.saldo >= 5;
+          && (request.time <= timestamp.date(2026, 12, 1) + duration.value(21599, 's')
+              || get(/databases/$(db)/documents/usuarios/$(request.auth.uid)).data.saldo >= 5);
       }
+
+      // Datos de contacto: solo se ven después de aceptar la oferta
       match /contacto/{c} {
         allow create, update: if request.auth.uid == c;
         allow read: if request.auth.uid == c ||
@@ -36,10 +48,28 @@ service cloud.firestore {
               && get(/databases/$(db)/documents/solicitudes/$(s)).data.ofertaId == c));
       }
     }
+
+    // Historial de ofertas enviadas por la empresa
     match /ofertasEnviadas/{id} {
       allow create, update: if request.auth.uid == request.resource.data.empresaUid;
       allow read: if request.auth.uid == resource.data.empresaUid;
     }
+
+    // Reportes de usuarios: solo se crean; los revisa el administrador desde la consola
+    match /reportes/{id} {
+      allow create: if request.auth != null
+        && request.resource.data.reportadoPor == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // Bloqueos: cada usuario gestiona los suyos
+    match /bloqueos/{id} {
+      allow create: if request.auth != null
+        && request.resource.data.bloqueadoPor == request.auth.uid;
+      allow read: if request.auth != null
+        && resource.data.bloqueadoPor == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.bloqueadoPor == request.auth.uid;
+    }
   }
 }
-
