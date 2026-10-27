@@ -119,7 +119,7 @@ exports.eliminarCuenta = onCall(async (request) => {
 
 // ===================== ADMINISTRACIÓN =====================
 // Pon aquí los UID de las cuentas de administrador (Firebase Auth → Usuarios → UID).
-const ADMIN_UIDS = ['PEGA_AQUI_TU_UID_DE_ADMIN'];
+const ADMIN_UIDS = ['XobluSg14DZkn2IueZig8haW0ak2'];
 
 function esAdmin(request) {
   if (!request.auth) throw new HttpsError("unauthenticated", "Inicia sesión.");
