@@ -2,6 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
 
+    // Verdadero si la cuenta que escribe NO está bloqueada por administración
+    function noBloqueado() {
+      return !get(/databases/$(db)/documents/usuarios/$(request.auth.uid)).data.get('bloqueado', false);
+    }
+
     // Perfil de usuario (cliente o empresa)
     match /usuarios/{u} {
       allow read: if request.auth.uid == u;
@@ -21,7 +26,7 @@ service cloud.firestore {
     // Subastas (solicitudes)
     match /solicitudes/{s} {
       allow read: if request.auth != null;
-      allow create: if request.auth.uid == request.resource.data.uid
+      allow create: if request.auth.uid == request.resource.data.uid && noBloqueado()
         && (!('extras' in request.resource.data)
             || request.resource.data.extras.size() <= 2);
       allow update: if request.auth.uid == resource.data.uid;
@@ -31,14 +36,14 @@ service cloud.firestore {
       // Después de ese periodo se exige saldo mínimo de $5.
       match /ofertas/{o} {
         allow read: if request.auth != null;
-        allow write: if request.auth.uid == o
+        allow write: if request.auth.uid == o && noBloqueado()
           && (request.time <= timestamp.date(2026, 12, 1) + duration.value(21599, 's')
               || get(/databases/$(db)/documents/usuarios/$(request.auth.uid)).data.saldo >= 5);
       }
 
       // Datos de contacto: solo se ven después de aceptar la oferta
       match /contacto/{c} {
-        allow create, update: if request.auth.uid == c;
+        allow create, update: if request.auth.uid == c && noBloqueado();
         allow read: if request.auth.uid == c ||
           get(/databases/$(db)/documents/solicitudes/$(s)).data.estado == 'aceptada'
           && (
@@ -51,7 +56,7 @@ service cloud.firestore {
 
     // Historial de ofertas enviadas por la empresa
     match /ofertasEnviadas/{id} {
-      allow create, update: if request.auth.uid == request.resource.data.empresaUid;
+      allow create, update: if request.auth.uid == request.resource.data.empresaUid && noBloqueado();
       allow read: if request.auth.uid == resource.data.empresaUid;
     }
 
